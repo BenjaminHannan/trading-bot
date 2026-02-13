@@ -1,0 +1,9 @@
+services:
+  signal-engine:
+    build: .
+    command: npm run signal-engine
+    env_file: .env
+  trader:
+    build: .
+    command: npm run trader
+    env_file: .env

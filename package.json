@@ -1,0 +1,16 @@
+{
+  "name": "polymarket-current-events-trader",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "signal-engine": "node --enable-source-maps dist/src/signal_engine/index.js",
+    "trader": "node --enable-source-maps dist/src/trader/index.js",
+    "test": "node --test dist/tests/*.test.js",
+    "test:run": "npm run build && npm run test"
+  }
+}
