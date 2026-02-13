@@ -1,31 +1,18 @@
-import { readFileSync, existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { EnvConfig } from "../shared/schema.js";
 
-function parseBoolean(value: string | undefined, fallback: boolean): boolean {
-  if (value === undefined) return fallback;
-  return value.toLowerCase() === "true";
-}
-
-function parseNumber(value: string | undefined, fallback: number): number {
-  if (value === undefined) return fallback;
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed)) throw new Error(`Invalid number: ${value}`);
-  return parsed;
-}
+function bool(v: string | undefined, d: boolean): boolean { return v === undefined ? d : v.toLowerCase() === "true"; }
+function num(v: string | undefined, d: number): number { if (v === undefined) return d; const n = Number(v); if (!Number.isFinite(n)) throw new Error(`invalid number ${v}`); return n; }
 
 export function loadDotEnv(path = ".env"): void {
   const full = resolve(path);
   if (!existsSync(full)) return;
   const raw = readFileSync(full, "utf8");
   for (const line of raw.split(/\r?\n/)) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const idx = trimmed.indexOf("=");
-    if (idx < 0) continue;
-    const key = trimmed.slice(0, idx).trim();
-    const value = trimmed.slice(idx + 1).trim();
-    if (!(key in process.env)) process.env[key] = value;
+    if (!line || line.trim().startsWith("#") || !line.includes("=")) continue;
+    const [k, ...rest] = line.split("=");
+    if (!(k in process.env)) process.env[k.trim()] = rest.join("=").trim();
   }
 }
 
@@ -37,20 +24,21 @@ export function loadEnv(): EnvConfig {
     CLOB_API_SECRET: process.env.CLOB_API_SECRET,
     CLOB_API_PASSPHRASE: process.env.CLOB_API_PASSPHRASE,
     RPC_URL: process.env.RPC_URL,
-    MARKET_QUERY: process.env.MARKET_QUERY ?? "",
-    OUTCOME_SIDE: process.env.OUTCOME_SIDE === "NO" ? "NO" : "YES",
-    MAX_POSITION_USD: parseNumber(process.env.MAX_POSITION_USD, 200),
-    MAX_ORDER_USD: parseNumber(process.env.MAX_ORDER_USD, 20),
-    MAX_ORDERS_PER_MIN: parseNumber(process.env.MAX_ORDERS_PER_MIN, 20),
-    KILL_SWITCH_DRAWDOWN_USD: parseNumber(process.env.KILL_SWITCH_DRAWDOWN_USD, 100),
-    DRY_RUN: parseBoolean(process.env.DRY_RUN, true),
-    TRADING_ENABLED: parseBoolean(process.env.TRADING_ENABLED, false),
-    SUPERVISOR_ENABLED: parseBoolean(process.env.SUPERVISOR_ENABLED, true),
-    CONFIG_CHANNEL_PATH: process.env.CONFIG_CHANNEL_PATH ?? "./runtime-config.json",
+    DRY_RUN: bool(process.env.DRY_RUN, true),
+    TRADING_ENABLED: bool(process.env.TRADING_ENABLED, false),
+    SIGNAL_ENGINE_ENABLED: bool(process.env.SIGNAL_ENGINE_ENABLED, true),
+    MARKET_INDEX_REFRESH_SEC: num(process.env.MARKET_INDEX_REFRESH_SEC, 60),
+    SIGNAL_CHANNEL_PATH: process.env.SIGNAL_CHANNEL_PATH ?? "./signals.jsonl",
+    RUNTIME_CONFIG_PATH: process.env.RUNTIME_CONFIG_PATH ?? "./runtime-config.json",
     STATE_SNAPSHOT_PATH: process.env.STATE_SNAPSHOT_PATH ?? "./state-snapshot.json",
+    MAX_POSITION_USD: num(process.env.MAX_POSITION_USD, 200),
+    MAX_ORDER_USD: num(process.env.MAX_ORDER_USD, 20),
+    MAX_ORDERS_PER_MIN: num(process.env.MAX_ORDERS_PER_MIN, 20),
+    KILL_SWITCH_DRAWDOWN_USD: num(process.env.KILL_SWITCH_DRAWDOWN_USD, 100),
+    EDGE_THRESHOLD_BPS: num(process.env.EDGE_THRESHOLD_BPS, 50),
+    SIGNAL_TTL_SEC: num(process.env.SIGNAL_TTL_SEC, 10),
     LOG_LEVEL: (process.env.LOG_LEVEL as EnvConfig["LOG_LEVEL"]) ?? "info",
-    GEO_BLOCKED_COUNTRIES: (process.env.GEO_BLOCKED_COUNTRIES ?? "US,UK").split(",").map((v: string) => v.trim()).filter(Boolean),
-    PAPER_PORTFOLIO_PATH: process.env.PAPER_PORTFOLIO_PATH ?? "./paper-portfolio.json",
-    PAPER_STARTING_CASH_USD: parseNumber(process.env.PAPER_STARTING_CASH_USD, 1000)
+    GEO_BLOCKED_COUNTRIES: (process.env.GEO_BLOCKED_COUNTRIES ?? "").split(",").map((s: string) => s.trim()).filter(Boolean),
+    COUNTRY_CODE: (process.env.COUNTRY_CODE ?? "").trim().toUpperCase()
   };
 }

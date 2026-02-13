@@ -1,17 +1,15 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync } from "node:fs";
+import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { writeRuntimeConfigAtomic, readRuntimeConfig, defaultRuntimeConfig } from "../src/shared/runtimeConfig.js";
+import { writeRuntimeConfigAtomic, readRuntimeConfig } from "../src/shared/messageBus.js";
 
-test("runtime config write/read atomic", () => {
-  const dir = mkdtempSync(join(tmpdir(), "cfg-"));
-  const path = join(dir, "runtime.json");
-  const next = { ...defaultRuntimeConfig, version: 2, timestamp: new Date().toISOString(), edgeTicks: 3 };
-  writeRuntimeConfigAtomic(path, next);
-  const raw = readFileSync(path, "utf8");
-  assert.ok(raw.includes('"version": 2'));
-  const loaded = readRuntimeConfig(path);
-  assert.equal(loaded.edgeTicks, 3);
+test("runtime config atomic read write", () => {
+  const dir = mkdtempSync(join(tmpdir(), "rt-"));
+  const path = join(dir, "cfg.json");
+  const cfg = { version: 1, updatedAtMs: Date.now(), paused: false, edgeThresholdBps: 50, signalTtlSec: 10, maxOrderUsd: 20, maxOrdersPerMin: 10 };
+  writeRuntimeConfigAtomic(path, cfg);
+  const got = readRuntimeConfig(path, cfg);
+  assert.equal(got.version, 1);
 });

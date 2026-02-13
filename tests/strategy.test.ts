@@ -1,10 +1,15 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { generateInventoryAwareQuote } from "../src/strategy/marketMaking.js";
+import { buildSignalOrders } from "../src/strategy/signalDrivenStrategy.js";
 
-test("strategy generates bounded quotes", () => {
-  const q = generateInventoryAwareQuote({ mid: 0.5, inventory: 10, edgeTicks: 2, tickSize: 0.001, orderSizeUsd: 10, conservativeMode: false });
-  assert.ok(q.bidPrice < 0.5);
-  assert.ok(q.askPrice > 0.5);
-  assert.ok(q.buySize > 0);
+test("strategy emits buy order when fair > mid with enough edge", () => {
+  const orders = buildSignalOrders({
+    signal: { version: 1, createdAtMs: Date.now(), ttlSec: 10, source: "manual", eventId: "e", marketSlug: "m", tokenId: "t", impliedProb: 0.6, confidence: 0.8, rationale: "r" },
+    mid: 0.5,
+    bestBid: 0.49,
+    bestAsk: 0.51,
+    edgeThresholdBps: 50,
+    maxOrderUsd: 20
+  });
+  assert.equal(orders[0]?.side, "BUY");
 });

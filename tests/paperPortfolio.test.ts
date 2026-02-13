@@ -1,18 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createPaperPortfolio, applyPaperFill, updateMark } from "../src/storage/paperPortfolio.js";
+import { parseSignal } from "../src/shared/schema.js";
 
-test("paper portfolio tracks cash/position/pnl", () => {
-  const p = createPaperPortfolio(1000);
-  applyPaperFill(p, { side: "BUY", price: 0.4, size: 100 }, 0.4);
-  assert.equal(Math.round(p.cashUsd), 960);
-  assert.equal(p.positionShares, 100);
-
-  applyPaperFill(p, { side: "SELL", price: 0.5, size: 40 }, 0.5);
-  assert.equal(p.positionShares, 60);
-  assert.ok(p.realizedPnlUsd > 0);
-
-  updateMark(p, 0.55);
-  assert.ok(p.unrealizedPnlUsd > 0);
-  assert.ok(p.equityUsd > p.startingCashUsd);
+test("signal schema strict parse", () => {
+  const s = parseSignal({ version: 1, createdAtMs: Date.now(), ttlSec: 10, source: "manual", eventId: "e1", marketSlug: "m", tokenId: "t", impliedProb: 0.5, confidence: 0.9, rationale: "x" });
+  assert.equal(s.version, 1);
 });

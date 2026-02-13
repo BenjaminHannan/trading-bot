@@ -1,16 +1,27 @@
-import { EventEmitter } from "node:events";
+import { appendFileSync, existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { Signal, parseSignal, RuntimeConfig, parseRuntimeConfig } from "./schema.js";
 
-export interface InternalEvents {
-  bookUpdate: { tokenId: string; bid: number; ask: number; ts: number };
-  fill: { orderId: string; price: number; size: number; side: "BUY" | "SELL"; ts: number };
-  runtimeConfigApplied: { version: number; ts: number };
+export function appendSignal(path: string, signal: Signal): void {
+  parseSignal(signal);
+  appendFileSync(path, `${JSON.stringify(signal)}\n`);
 }
 
-export class MessageBus extends EventEmitter {
-  emitEvent<K extends keyof InternalEvents>(event: K, payload: InternalEvents[K]): void {
-    this.emit(event, payload);
-  }
-  onEvent<K extends keyof InternalEvents>(event: K, handler: (payload: InternalEvents[K]) => void): void {
-    this.on(event, handler);
-  }
+export function readSignalsSince(path: string, offset: number): { nextOffset: number; signals: Signal[] } {
+  if (!existsSync(path)) return { nextOffset: 0, signals: [] };
+  const raw = readFileSync(path, "utf8");
+  const lines = raw.split(/\r?\n/).filter(Boolean);
+  const slice = lines.slice(offset);
+  return { nextOffset: lines.length, signals: slice.map((l: string) => parseSignal(JSON.parse(l))) };
+}
+
+export function writeRuntimeConfigAtomic(path: string, config: RuntimeConfig): void {
+  parseRuntimeConfig(config);
+  const tmp = `${path}.tmp`;
+  writeFileSync(tmp, JSON.stringify(config, null, 2));
+  renameSync(tmp, path);
+}
+
+export function readRuntimeConfig(path: string, fallback: RuntimeConfig): RuntimeConfig {
+  if (!existsSync(path)) return fallback;
+  return parseRuntimeConfig(JSON.parse(readFileSync(path, "utf8")));
 }

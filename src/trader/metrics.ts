@@ -1,10 +1,7 @@
-export interface LatencyMetric {
-  marketDataTs: number;
-  decisionTs: number;
-  submitTs: number;
-  ackTs: number;
+export interface TraderMetrics {
+  ordersPlaced: number;
+  signalsSeen: number;
+  lastSignalAtMs?: number;
 }
 
-export function computeLatency(metric: LatencyMetric): number {
-  return metric.ackTs - metric.marketDataTs;
-}
+export const initMetrics = (): TraderMetrics => ({ ordersPlaced: 0, signalsSeen: 0 });

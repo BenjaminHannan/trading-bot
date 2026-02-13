@@ -1,6 +1,6 @@
 {
-  "name": "polymarket-two-process-bot",
-  "version": "0.1.0",
+  "name": "polymarket-current-events-trader",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -8,12 +8,8 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "signal-engine": "node --enable-source-maps dist/src/signal_engine/index.js",
     "trader": "node --enable-source-maps dist/src/trader/index.js",
-    "supervisor": "node --enable-source-maps dist/src/supervisor/index.js",
-    "cli:select-market": "node --enable-source-maps dist/src/cli/selectMarket.js",
-    "cli:create-api-keys": "node --enable-source-maps dist/src/cli/createApiKeys.js",
-    "cli:status": "node --enable-source-maps dist/src/cli/status.js",
-    "cli:paper-portfolio": "node --enable-source-maps dist/src/cli/paperPortfolio.js",
     "test": "node --test dist/tests/*.test.js",
     "test:run": "npm run build && npm run test"
   }

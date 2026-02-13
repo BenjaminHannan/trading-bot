@@ -1,6 +1,6 @@
 import { runTrader } from "./traderLoop.js";
 
-runTrader().catch((error) => {
-  process.stderr.write(`TRADER_FATAL ${String(error)}\n`);
+runTrader().catch((e) => {
+  process.stderr.write(`TRADER_FATAL ${String(e)}\n`);
   process.exit(1);
 });
