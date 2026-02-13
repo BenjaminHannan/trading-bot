@@ -13,6 +13,7 @@
 - Shared file interface:
   - `CONFIG_CHANNEL_PATH` (runtime config update channel, atomic writes)
   - `STATE_SNAPSHOT_PATH` (trader state snapshots)
+  - `PAPER_PORTFOLIO_PATH` (fake-money portfolio ledger for DRY_RUN)
 
 ## Endpoints used
 - CLOB WebSocket: `wss://ws-subscriptions-clob.polymarket.com/ws/`
@@ -44,10 +45,31 @@
   ```bash
   npm run cli:select-market
   ```
-- Status CLI:
+- Snapshot status CLI:
   ```bash
   npm run cli:status
   ```
+- Paper portfolio CLI:
+  ```bash
+  npm run cli:paper-portfolio
+  ```
+
+## Paper trading (fake money)
+Keep:
+- `DRY_RUN=true`
+- `TRADING_ENABLED=false` (recommended for paper mode)
+
+In this mode trader does not submit live orders. Instead it simulates fills for generated bid/ask quotes and writes portfolio results to `PAPER_PORTFOLIO_PATH`.
+
+Configure:
+- `PAPER_PORTFOLIO_PATH=./paper-portfolio.json`
+- `PAPER_STARTING_CASH_USD=1000`
+
+Then run trader and inspect fake portfolio:
+```bash
+npm run trader
+npm run cli:paper-portfolio
+```
 
 ## Live trading enablement
 To enable live trading, you must explicitly set:
@@ -70,6 +92,9 @@ Trader validates updates against strict bounds and monotonically increasing vers
 
 ## Conservative mode
 When enabled, strategy widens edge and reduces aggression.
+
+## Profitability disclaimer
+This project provides a controlled framework and paper trading support, **not guaranteed profitability**. Validate performance in DRY_RUN for a long period before considering live trading.
 
 ## Testing
 ```bash

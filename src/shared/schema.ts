@@ -19,6 +19,9 @@ export interface EnvConfig {
   STATE_SNAPSHOT_PATH: string;
   LOG_LEVEL: "debug" | "info" | "warn" | "error";
   GEO_BLOCKED_COUNTRIES: string[];
+  PAPER_PORTFOLIO_PATH: string;
+  PAPER_STARTING_CASH_USD: number;
+
 }
 
 export interface RuntimeConfigUpdate {

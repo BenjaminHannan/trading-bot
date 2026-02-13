@@ -10,6 +10,7 @@ import { generateInventoryAwareQuote } from "../strategy/marketMaking.js";
 import { canTrade } from "../risk/riskEngine.js";
 import { SlidingWindowRateLimiter } from "../risk/rateLimiter.js";
 import { buildExecutionClient } from "../execution/clobAdapter.js";
+import { loadPaperPortfolio, savePaperPortfolio, applyPaperFill, updateMark } from "../storage/paperPortfolio.js";
 
 const CLOB_REST_BASE = "https://clob.polymarket.com";
 
@@ -34,6 +35,7 @@ export async function runTrader(): Promise<void> {
   });
 
   const book = new L2OrderBook();
+  const paper = loadPaperPortfolio(env.PAPER_PORTFOLIO_PATH, env.PAPER_STARTING_CASH_USD);
   let reconnectCount = 0;
   let inventory = 0;
   let runtime = defaultRuntimeConfig;
@@ -58,10 +60,10 @@ export async function runTrader(): Promise<void> {
       reconnectCount,
       staleMarketData: Date.now() - book.lastUpdateTs > 5_000,
       lastMid: book.mid(),
-      inventory,
-      realizedPnlUsd: 0,
-      unrealizedPnlUsd: 0,
-      drawdownUsd: 0,
+      inventory: env.DRY_RUN ? paper.positionShares : inventory,
+      realizedPnlUsd: paper.realizedPnlUsd,
+      unrealizedPnlUsd: paper.unrealizedPnlUsd,
+      drawdownUsd: Math.max(0, paper.startingCashUsd - paper.equityUsd),
       openOrders: [],
       metrics: { wsDisconnectRate: reconnectCount / 10, orderRejectRate: 0, avgSubmitLatencyMs: 0 }
     });
@@ -77,16 +79,18 @@ export async function runTrader(): Promise<void> {
       if (!mid) return;
       const q = generateInventoryAwareQuote({
         mid,
-        inventory,
+        inventory: env.DRY_RUN ? paper.positionShares : inventory,
         edgeTicks: runtime.edgeTicks,
         tickSize: 0.001,
         orderSizeUsd: runtime.orderSizeUsd,
         conservativeMode: runtime.conservativeMode
       });
+      updateMark(paper, mid);
+
       const risk = canTrade(env, runtime, {
         orderUsd: runtime.orderSizeUsd,
-        projectedPositionUsd: inventory * mid,
-        drawdownUsd: 0,
+        projectedPositionUsd: (env.DRY_RUN ? paper.positionShares : inventory) * mid,
+        drawdownUsd: Math.max(0, paper.startingCashUsd - paper.equityUsd),
         marketDataAgeMs: Date.now() - book.lastUpdateTs,
         reconnectCount
       });
@@ -96,8 +100,14 @@ export async function runTrader(): Promise<void> {
       }
       if (!limiter.allow()) return;
       logger.info("quote decision", { dryRun: env.DRY_RUN, bid: q.bidPrice, ask: q.askPrice });
-      await execution.placeOrder({ tokenId, side: "BUY", price: q.bidPrice, size: q.buySize });
-      await execution.placeOrder({ tokenId, side: "SELL", price: q.askPrice, size: q.sellSize });
+      if (env.DRY_RUN) {
+        applyPaperFill(paper, { side: "BUY", price: q.bidPrice, size: q.buySize }, mid);
+        applyPaperFill(paper, { side: "SELL", price: q.askPrice, size: q.sellSize }, mid);
+        savePaperPortfolio(env.PAPER_PORTFOLIO_PATH, paper);
+      } else {
+        await execution.placeOrder({ tokenId, side: "BUY", price: q.bidPrice, size: q.buySize });
+        await execution.placeOrder({ tokenId, side: "SELL", price: q.askPrice, size: q.sellSize });
+      }
     }
   });
 

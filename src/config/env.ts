@@ -49,6 +49,8 @@ export function loadEnv(): EnvConfig {
     CONFIG_CHANNEL_PATH: process.env.CONFIG_CHANNEL_PATH ?? "./runtime-config.json",
     STATE_SNAPSHOT_PATH: process.env.STATE_SNAPSHOT_PATH ?? "./state-snapshot.json",
     LOG_LEVEL: (process.env.LOG_LEVEL as EnvConfig["LOG_LEVEL"]) ?? "info",
-    GEO_BLOCKED_COUNTRIES: (process.env.GEO_BLOCKED_COUNTRIES ?? "US,UK").split(",").map((v: string) => v.trim()).filter(Boolean)
+    GEO_BLOCKED_COUNTRIES: (process.env.GEO_BLOCKED_COUNTRIES ?? "US,UK").split(",").map((v: string) => v.trim()).filter(Boolean),
+    PAPER_PORTFOLIO_PATH: process.env.PAPER_PORTFOLIO_PATH ?? "./paper-portfolio.json",
+    PAPER_STARTING_CASH_USD: parseNumber(process.env.PAPER_STARTING_CASH_USD, 1000)
   };
 }
