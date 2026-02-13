@@ -1,0 +1,19 @@
+{
+  "name": "polymarket-two-process-bot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "trader": "node --enable-source-maps dist/trader/index.js",
+    "supervisor": "node --enable-source-maps dist/supervisor/index.js",
+    "cli:select-market": "node --enable-source-maps dist/cli/selectMarket.js",
+    "cli:create-api-keys": "node --enable-source-maps dist/cli/createApiKeys.js",
+    "cli:status": "node --enable-source-maps dist/cli/status.js",
+    "test": "node --test dist/tests/*.test.js",
+    "test:run": "npm run build && npm run test"
+  }
+}
