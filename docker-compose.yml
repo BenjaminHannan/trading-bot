@@ -1,0 +1,9 @@
+services:
+  trader:
+    build: .
+    command: npm run trader
+    env_file: .env
+  supervisor:
+    build: .
+    command: npm run supervisor
+    env_file: .env
